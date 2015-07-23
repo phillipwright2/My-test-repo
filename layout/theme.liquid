@@ -1,0 +1,180 @@
+{% unless customer %}
+    {% if template contains 'customers' %}
+        {% assign send_to_login = false %}
+    {% else %}
+        {% assign send_to_login = true %}
+    {% endif %}
+{% endunless %}
+
+{% if send_to_login %}
+<meta content="0; url=/account/login?checkout_url={{ shop.url }}" http-equiv="refresh" />
+{% else %}
+
+
+
+
+
+<!DOCTYPE html>
+<html lang="en" prefix="og: http://ogp.me/ns#">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="author" content="{{ shop.name }}">
+
+  {% include 'variables' %}
+
+  <!-- Bootstrap Core CSS --> 
+  <link href="{{ 'css-bootstrap-min.css' | asset_url }}" rel="stylesheet">
+
+
+  <!-- Material Design - Materil theme -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.3.0/css/font-awesome.min.css" type="text/css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.3.0/animate.min.css" type="text/css" />
+  <link rel="stylesheet" href="{{ 'material-design-icons.css' | asset_url }}" type="text/css" />
+  <link rel="stylesheet" href="{{ 'app.css' | asset_url }}" type="text/css" />
+  <link rel="stylesheet" href="{{ 'waves.min.css' | asset_url }}" type="text/css" />
+  <!-- ./Material Design - Materil theme -->
+
+  <link type="text/css" rel="stylesheet" href="//fast.fonts.net/cssapi/51f8df72-cf02-490a-8be7-671ac7a615c9.css"/>
+  <link href="{{ 'custom.css' | asset_url }}" rel="stylesheet">
+
+
+  <!-- Bootstrap and core Bootstrap for Shopify Javascript -->
+  {{ 'js-jquery-min.js' | asset_url | script_tag }}
+  {{ 'js-bootstrap-min.js' | asset_url | script_tag }}
+  {{ 'custom.js' | asset_url | script_tag }}
+
+  <!-- Material Design - Materil theme -->
+  <script src="{{ 'waves.min.js' | asset_url }}"></script>
+  <script src="{{ 'ui-waves.js' | asset_url }}"></script>
+  <script src="{{ 'ui-load.js' | asset_url }}"></script>
+  <script src="{{ 'ui-jp.config.js' | asset_url }}"></script>
+  <script src="{{ 'ui-jp.js' | asset_url }}"></script>
+  <script src="{{ 'ui-nav.js' | asset_url }}"></script>
+  <script src="{{ 'ui-toggle.js' | asset_url }}"></script>
+  <script src="{{ 'ui-waves.js' | asset_url }}"></script>
+  <!-- ./Material Design - Materil theme -->
+
+  <!-- HTML5 shim and Respond.js support for HTML5 elements and media queries -->
+  <!--[if lt IE 9]>
+    <script src="{{ 'js-html5shiv-min.js' | asset_url }}"></script>
+    <script src="{{ 'js-respond-min.js' | asset_url }}"></script>
+    <link href="{{ 'respond-proxy.html' | asset_url | split: '?' | first }}" id="respond-proxy" rel="respond-proxy" />
+    <link href="{{ shop.url }}/search?q={{ respond_js_hash }}" id="respond-redirect" rel="respond-redirect" />
+    <script src="{{ shop.url }}/search?q={{ respond_js_hash }}" type="text/javascript"></script>
+  <![endif]-->
+  
+
+
+  {{ content_for_header }}
+
+  <!-- Include Main SEO Tags -->
+  {% include 'head-seo' %}
+
+  <!-- Include Social Meta Tags -->
+  {% include 'head-social' %}
+
+  <!-- Conditionally include Shopify's required customer Javascript on customer pages. -->
+  <!-- Needs to be in the head because Shopify's code assumes it's available in the body. -->
+  {% if template contains 'customers' %}
+    {{ 'shopify_common.js' | shopify_asset_url | script_tag }}
+    {{ 'customer_area.js' | shopify_asset_url | script_tag }}
+  {% endif %}
+
+  <!-- Conditionally include Shopify's option selection code for product pages. -->
+  {% if template == 'product' %}
+  {{ 'option_selection.js' | shopify_asset_url | script_tag }}
+  {% endif %}
+</head>
+
+<body>
+
+<div class="app">
+    <!-- aside -->
+    <aside class="app-aside modal fade" id="aside">
+        <div class="left">
+            <div class="box bg-white">
+                <div class="box-row">
+                  <div class="box-cell scrollable hover">
+                    <div class="box-inner">
+                      {% include 'sidebar' %}
+                    </div>
+                  </div>
+                </div>
+            </div>
+        </div>
+    </aside>
+    <!-- / aside -->
+
+
+    <!-- content -->
+    <div class="app-content" id="content">
+        <div class="box">
+            <!-- Content Navbar -->
+            {% include 'nav-bar-top' %}
+            <!--./Content Navbar -->
+
+            <!-- Content -->
+            <div class="box-row">
+                <div class="box-cell">
+                    <div class="box-inner padding">
+
+                      <!--
+                        Shopify doesn't let us override list-collections.liquid directly.
+                        Instead, we have to use this hack to customise our /collections and /products pages.
+                      -->
+                      {% if template == 'list-collections' %}
+                        {% include 'collection-listing' %}
+                      {% else %}
+                        {{ content_for_layout }}
+                      {% endif %}
+
+
+                   </div>
+                </div>
+            </div><!-- / -->
+        </div>
+    </div><!-- / content -->    
+
+
+
+</div>
+
+
+
+
+  <!-- Slideshow, if we'd like it full width. -->
+  {% if settings.slideshow_position == "full" and template == "index" %}{% include 'slideshow' %}{% endif %}
+
+
+  <!-- Site Footer -->
+  {% include 'footer' %}
+
+  <!-- Quick View -->
+  {% include 'quick-view-template' %}
+  
+  <!-- Shopify -->
+  {{ 'js-bs4sf-min.js' | asset_url | script_tag }}
+
+  <!-- If we're on a product page, set up product page. -->
+  {% if template == 'product' %}
+  <script type="text/javascript">
+    jQuery(function() {
+      Shopify.BS4SF.setupProductPage({{ product | json }}, {
+        show_sale_tag: {{ settings.product_show_sale_tag }},
+        money_format: "{{ shop.money_format }}",
+        money_with_currency_format: "{{ shop.money_with_currency_format }}"
+      });
+    });
+  </script>
+  {% endif %}
+  {% include 'ajaxify-cart' %}
+
+<input type="hidden" name="_pc_params" value="{{ shop.permanent_domain }}:{{ customer.id }}" />
+</body>
+</html>
+
+
+
+{% endif %}
+<!-- / Require Login --> 

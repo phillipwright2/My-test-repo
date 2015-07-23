@@ -1,0 +1,72 @@
+{% comment %}
+
+  This snippet renders a product into a product list.
+  By default, it's only used by the product-list.liquid snippet.
+
+
+<a href="{{ product.url | within: collection }}" title="{{ product.title }}" class="thumbnail">
+  <img src="{{ product.images.first | product_img_url: 'large' }}" alt="{{ product.title }}" />
+</a>
+
+<h5>
+  <a href="{{ product.url | within: collection }}" title="{{ product.title }}">{{ product.title }}</a>
+  {% if product.compare_at_price_max > product.price and settings.product_show_sale_tag %}
+  <span class="label label-success">SALE</span>
+  {% endif %}
+</h5>
+
+<p class="lead text-muted">
+  {% if product.compare_at_price_max > product.price %}<del>{{ product.compare_at_price_max | money }}</del> {% endif %}
+  {% if product.price_varies %} from {% endif %}
+  {{ product.price | money }}
+</p>
+
+{% endcomment %}
+<tr>
+  <td>
+       <a href="{{ product.url | within: collection }}" title="{{ product.title }}">
+          <img class="circle" src="{{ product.images.first | product_img_url: 'compact' }}" alt="{{ product.title }}">
+        </a>
+  </td>
+  <td>
+        <h5 class="media-heading">
+          {{ product.title }}
+          {% if product.compare_at_price_max > product.price and settings.product_show_sale_tag %}
+          <span class="label label-success">SALE</span>
+          {% endif %}
+           
+        <p class="lead text-muted">
+          {% if product.compare_at_price_max > product.price %}<del>{{ product.compare_at_price_max | money }}</del> {% endif %}
+          {% if product.price_varies %} from {% endif %}
+          {{ product.price | money }}
+        </p>
+  </td>
+  <td nowrap style="width:200px">
+      <div class="action">
+        {% assign variantCount = product.variants | size %}
+        <form action="/cart/add" method="post" class="variants form-inline" id="product-actions-{{ product.id }}" enctype="multipart/form-data" style="padding:0px;">
+          <div class="form-group">
+            {% if sold_out %}
+              <!-- cnt modal to email if item is sold out -->
+              <a href="#-{{variant.id}}" class="btn btn-secondary BIS_trigger in-stock-modal" data-product-handle="{{ variant.handle }}">
+                  Email When Available
+              </a>  
+              <!-- end modal -->
+            {% comment %}  <input class="btn add-to-cart-btn" type="submit" value="Unavailable" disabled="disabled" />{% endcomment %}
+            {% else %}
+              {% if variantCount > 1 %} 
+                <input class="btn" type="button" onclick="window.location.href='{{product.url}}'" value="Select options" />
+              {% else %}
+                <div class="input-group">
+                  <input type="hidden" name="id" value="{{ product.variants[0].id }}" />  
+                  <input min="3" type="number" name="quantity" class="form-control" value="3" style="width:70px"/>
+                  <button class="btn btn-default add-to-cart-btn" type="submit">Add</button>
+                </div>
+              {% endif %}
+            {% endif %}
+          </div>
+        </form>     
+      </div>
+  </td>
+</tr>
+

@@ -1,0 +1,68 @@
+
+                              
+                               
+
+
+  <!-- uiView:  -->
+  <div ui-view="" class="ng-scope">
+    <div class="row ng-scope">
+      {% for product in collection.products %}
+        {% assign variantCount = product.variants | size %}
+        {% for variant in product.variants %}
+          {% if variant.title contains "Default" %}
+            <div class="col-xs-6 col-sm-6 col-md-4 col-lg-3 col-xl-2">
+              <div class="panel panel-card grey-100" style="height:400px">
+                <div class="item">
+                  <img src="{{ product.images | first | product_img_url: 'medium' }}" alt="{{ product.title | escape }}" class="w-full r-t" style="max-height:250px" />
+                  <div class="bottom text-grey p">
+                    {% if product.compare_at_price_max > product.price and settings.product_show_sale_tag %}
+                      <span class="label green">SALE</span>
+                    {% endif %}
+                  </div>
+                </div>
+                <a md-ink-ripple="" class="md-btn md-raised md-fab green m-r md-fab-offset pull-right">
+                  <span class="text-grey">{{product.price | money}}</span></a>
+                <div class="p">
+                  <h3 style="font-size:16px">{{ product.title }}</h3>
+                  <p>
+                    <form action="/cart/add" method="post" class="variants form-inline" id="product-actions-{{ variant.id }}" enctype="multipart/form-data" style="padding:0px;">
+                      <div class="form-group">
+                        {% if variant.available %}
+                          <input type="hidden" name="id" value="{{ variant.id }}" />
+                          <input class="form-control" type="number" value="3" min="3" name="quantity" style="width:50px">
+                          <button class="btn btn-default add-to-cart-btn" type="submit">Add to Cart</button>
+                        {% else %}
+                          <!-- cnt MODAL to email if item is sold out -->
+                          <a href="#-{{variant.id}}" class="btn btn-default BIS_trigger in-stock-modal" data-product-handle="{{ variant.handle }}">
+                            Email When Available
+                          </a>  
+                          <!-- end modal -->                          
+                        {% endif %}
+                      </div>
+                    </form> 
+
+                  </p>
+                  <p>
+                    {% if settings.product_show_twitter %}
+                    {% include 'social-widget' with 'twitter' %}
+                    {% endif %}
+
+                    {% if settings.product_show_facebook %}
+                    {% include 'social-widget' with 'facebook' %}
+                    {% endif %}
+
+                    {% if settings.product_show_pinterest %}
+                    {% include 'social-widget' with 'pinterest' %}
+                    {% endif %}
+                  </p>                  
+                </div>
+              </div>
+            </div>
+          {% else %}
+          {% endif %}
+        {% endfor %}
+      {% endfor %}
+
+
+    </div>
+  </div>

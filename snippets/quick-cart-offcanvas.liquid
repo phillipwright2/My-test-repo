@@ -1,0 +1,44 @@
+{% comment %}
+Off Canvas Cart Menu
+
+Author: Quan
+Date: 7/6/15
+
+Modified version of http://tympanus.net/Blueprints/SlidePushMenus/#
+
+{% endcomment %}
+
+
+<nav class="cbp-spmenu cbp-spmenu-vertical cbp-spmenu-right quick-cart" id="cbp-spmenu-s2">
+  
+  <div class="actions">
+    
+    <table class="table table-condensed table-hover" id='mini-cart-slidein'>
+      {% for item in cart.items %}
+        <tr class="" id="cart-item-{{item.id}}">
+          <td style="width:55px">
+              <a href="{{item.url}}" title="{{item.title}}" class="product-image">
+                <div class="circle_pic">
+                  <img class="img-circle" src="{{ item.image | product_img_url: 'thumb' }}" alt="{{item.title}}">
+                </div>
+              </a>
+          </td>
+          <td>
+            <div class="mini_cart_des">
+              {{ item.product.title }}
+                <span class="option">
+                  {% if item.product.variants.size != 0 %}
+                    {% unless item.variant.title contains 'Default' %}
+                      <small>{{ item.variant.title }}</small>
+                    {% endunless %}
+                  {% endif %}
+                </span>
+              <div class="cart-collateral"><span class="price">{{item.price | money}}</span> x {{item.quantity}}</div>
+            </div>
+          </td>
+        </tr>
+      {% endfor %}
+    </table>
+   </div> 
+</nav>
+

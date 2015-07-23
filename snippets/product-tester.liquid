@@ -1,0 +1,317 @@
+{% comment %}
+This is the template for wholesale testers.
+Dependencies: Bootstrap & jQuery
+
+Prequisites: 
+  - All items valid for testers must contain a "Tester" variant (spelled EXACTLY as: Tester)
+  - All tester variants must have the same SKU as the original product
+  - 'csscheckbox.png' must be present in the assets folder
+
+Other Notes: 
+  - Change currency on line 197
+  - To update quantity needed for valid tester view if statement on line 59
+{% endcomment %}
+
+<!-- Button triggers modal -->
+<button type="button" class="btn pink-100 btn-md" data-toggle="modal" data-target="#myModal">
+  Add Product Tester
+</button>
+
+
+<!-- Modal -->
+<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title" id="myModalLabel">Choose tester items below:</h4>
+      </div>
+      <div class="modal-body"  id="tester-loop">
+        
+      </div>
+      <div class="modal-footer">
+        <button id="update-cart" type="button" class="btn btn-primary" style="margin-left= none;">Update Cart</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  var testers = []
+  var notTesters = []
+
+  // =====================
+  // Creating Objects ~ ! 
+  // =====================
+  
+  // Iterate through cart items
+  {% for line_item in cart.items %}
+  
+  
+  
+    // Finding the variant of id of the tester item
+    {% for variant in line_item.product.variants %}
+  		
+  
+      {% if variant.title == 'Tester' %}
+        var testerVariant = '{{variant.id}}';
+      {% else %}
+        var testerVariant = null;
+      {% endif %}
+    {% endfor %}
+ 
+    
+    // If an item is over 3 in quantity and has a tester variant available 
+    var quantity = parseInt('{{line_item.quantity}}');
+                            
+    if(quantity >= 3 && testerVariant){
+  
+      // push last variant of product to the array               
+      {% unless line_item.title contains 'Tester' %}   
+      testers.push({ id   : '{{ line_item.product.id }}', 
+                     title: '{{ line_item.title }}',
+                     price: '{{ line_item.price }}',
+                     sku  : '{{ line_item.sku }}',
+                     image: '{{ line_item.image |  img_url: \"small\" }}',
+                     variant: testerVariant
+                    });
+      
+      console.log('id pushed=',{{ line_item.product.id }});
+      {% endunless %}
+    }else{
+      {% unless line_item.title contains 'Tester' %}
+      if(testerVariant){
+        notTesters.push({ id   : '{{ line_item.product.id }}', 
+                          title: '{{ line_item.title }}',
+                          price: '{{ line_item.price }}',
+                          sku: '{{ line_item.sku }}',
+                          image: '{{ line_item.image |  img_url: \"small\" }}',
+                          variant: testerVariant
+                        });
+        }
+      {% endunless %} 
+    }
+  {% endfor %} // Ends Object Creation
+  //   =================================
+
+  
+   console.log(testers,notTesters);
+
+    /* AddToCart (takes an array of tester variant ids):
+    - checks to see whether array exists
+    - removes the first element of the array and assigns the value to variantId
+    - makes ajax call to add tester to cart with a quantity of 1
+    - on sucess recursively call the function
+    - once all elements of the array have been added to cart
+    - reload the page (needed for update to register)
+  */
+  var addToCart = function(variantArray){
+    if(variantArray.length > 0){
+      var variantId = variantArray.shift();
+      $.ajax({
+        url: '/cart/add.js',
+        type: 'POST',
+        dataType: 'json',
+        data: {id: variantId, quantity: 1}
+      })
+      .done(function() { addToCart(variantArray); });
+    }else {
+      window.location.href = '/cart';
+    }
+  }
+
+  /* Remove from cart (takes an array of variants):
+     - checks to see whether array exists
+     - removes the first element of the array and assigns the value to variantId
+     - update the values of the testers to 0 
+     - call removeFromCart with the current array to change all invalid tester values to 0
+     - resubmit the cartform
+  */
+  var removeFromCart = function (variantArray) {
+    if(variantArray.length > 0){
+      var variantId = variantArray.shift();
+      $('#updates_'+ variantId).prop('disabled', false).val(0);
+      removeFromCart(variantArray);
+    }else{
+      $('#cartform').submit();
+    }
+  }
+
+
+  // Called in Document Ready
+  var controller = function () {
+    // If items that do not qualify as testers are present remove invalid testers
+    if(notTesters.length > 0){
+      removeInvalidTesters(notTesters);
+    }
+
+    // If no valid testers display a message on modal and disable update cart button
+    if(testers.length === 0){
+      $('#tester-loop').append('<h5> Sorry, you do not have any testers available. </h5><p>To qualify for a tester product you must have atleast 3 quantity of the same item. Testers are 50% off the original price. You can only purchase 1 tester per item.</p>');
+      $('#update-cart').prop("disabled", true);
+    }else{
+      // otherwise, add form to modal
+      testerLoop(testers);
+    }
+  }
+
+
+ // If an item already has a tester, remove checkbox
+  var hasTesterInCart = function () {
+    var testersInCart = [];
+
+    // Find tester in cart
+    {% for line_item in cart.items %}
+      {% if line_item.title contains 'Tester' %}
+        testersInCart.push('{{ line_item.id }}');
+      {% endif %}
+    {% endfor %}
+    
+    // replace checkbox with message
+    for (var i = 0; i < testers.length; i++) {
+      if(testersInCart.indexOf(testers[i].variant) !== -1){
+        var selector = '#box-' + testers[i].id;
+        testers[i].hasTester = true;
+        $(selector).html('<p class="tester-in-cart"> tester already added </p>')
+      }  
+    };
+  }
+  
+
+  var removeInvalidTesters = function (notQualified) {
+    var testerSkus = [];
+    var testerIds = [];
+    var toRemove = [];
+
+    // iterate through cart and stores skus and variant ids
+    {% for line_item in cart.items %}
+      {% if line_item.title contains 'Tester' %}
+        testerSkus.push('{{line_item.sku}}');
+        testerIds.push('{{line_item.id}}');
+      {% endif %}
+    {% endfor %}
+
+    // Check if item threshold falls below 3 and then remove tester 
+    for (var i = 0; i < notQualified.length; i++) {
+      if(testerSkus.indexOf(notQualified[i].sku) !== -1 ){
+        var testerIndex = testerSkus.indexOf(notQualified[i].sku);
+        var variantToRemove = testerIds[testerIndex];
+        toRemove.push(variantToRemove);
+      }
+    }
+    // If there are testers to remove, remove them
+    if(toRemove.length > 0){
+      removeFromCart(toRemove);
+    };
+  }
+
+  // Appends tester selection to the modal
+  var testerLoop = function (testerArray) {
+    // Currency setter:
+    var currency = '$'  // Change currency here for international sites
+
+    for (var i = testerArray.length - 1; i >= 0; i--) {
+      var discounted_price = currency + ((parseInt(testerArray[i].price)/100)/2).toFixed(2);
+      var original_price = currency + (parseInt(testerArray[i].price)/100).toFixed(2);
+
+      $('#tester-loop').append('<div class="row tester-row"><div class="col-xs-4 col-sm-4 col-md-4 col-lg-4"><img src="' + testerArray[i].image + '" alt=""></div><div class="col-xs-4 col-sm-4 col-md-4 col-lg-4"><p class="tester-title">' + testerArray[i].title + '</p></div><div class="col-xs-2 col-sm-2 col-md-2 col-lg-2"><p class="original-price">' + original_price + '</p><p> ' + discounted_price + '</p></div><div class="col-xs-2 col-sm-2 col-md-2 col-lg-2" id="box-' + testerArray[i].id + '"><input type="checkbox" class="css-checkbox" name="item-box-' + testerArray[i].id + '" id="item-box-' + testerArray[i].id + '"><label for="item-box-' + testerArray[i].id + '" class="css-label"> </label></div></div>');
+    };
+    disableTesterInput();
+    hasTesterInCart();
+  };
+
+  // Front end validation: Disables text input for tester items in cart 
+  var disableTesterInput = function () {
+    {% for line_item in cart.items  %}
+        var id = '{{line_item.id}}'
+        {% if line_item.title contains 'Tester' %}
+          $('#updates_' + id).attr("disabled", "disabled").css('border', 'none'); 
+        {% endif %}
+    {% endfor %}
+  }
+
+
+  // Event Listeners
+  // ================
+  $( document ).ready(controller);
+
+  /* On update cart:
+    - save the product ID and state of checkboxes
+    - push chosen testers to the testers array 
+    - call addToCart function
+  */
+  $('#update-cart').on('click', function(){
+    var chosenTesters = [];
+    
+    $('.tester-row').each(function(){
+      if($(this).find('.css-checkbox').attr('id')){
+        var productId =  $(this).find('.css-checkbox').attr('id').substring(9);
+        var checked = $(this).find('input').is(':checked');
+      }
+      if(checked){
+        for (var i = testers.length - 1; i >= 0; i--) {
+          if(testers[i].id === productId){
+            chosenTesters.push(testers[i].variant);
+          }
+        };
+      }
+    });
+    addToCart(chosenTesters);
+  });
+</script>
+
+<style>
+  .original-price {
+    text-decoration: line-through;
+  }
+
+  .tester-in-cart {
+    color: #80BF37;
+  }
+
+  .close {
+    font-size: 40px;
+    color: rgb(194, 0, 0);
+    opacity: 0.5;
+    margin-bottom: 10px;
+  }
+
+  input[type=checkbox].css-checkbox {
+    position:absolute; 
+    z-index:-1000; 
+    left:-1000px; 
+    overflow: hidden; 
+    clip: rect(0 0 0 0);
+    height:1px; 
+    width:1px; 
+    margin:-1px; 
+    padding:0; 
+    border:0;
+  }
+
+  input[type=checkbox].css-checkbox + label.css-label {
+    padding-left:39px;
+    height:34px; 
+    display:inline-block;
+    line-height:34px;
+    background-repeat:no-repeat;
+    background-position: 0 0;
+    font-size:34px;
+    vertical-align:middle;
+    cursor:pointer;
+  }
+
+  input[type=checkbox].css-checkbox:checked + label.css-label {
+    background-position: 0px -34px;
+  }
+  
+  label.css-label {
+    background-image:url({{'csscheckbox.png' | asset_url }});
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+  }
+</style>

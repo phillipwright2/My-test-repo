@@ -1,0 +1,52 @@
+<div class="box-inner">
+  <div class="p hidden-folded pink-50" style="background-size:cover;background-image:url({{ 'bg.png' | asset_url }})">
+
+    <a href="/">
+      <img src="//cdn.shopify.com/s/files/1/0648/1955/files/100percentpure_logo.svg?2832334830602199112" alt="100% Pure Logo" style="border: 0;height:105px">
+      </a>
+
+    {% if shop.customer_accounts_enabled %}
+      {% if customer %}
+        <a class="block m-t-sm" href="/account"> 
+          <span class="block font-bold">{{ customer.first_name }} {{ customer.last_name }}</span> 
+          {{ customer.email }} 
+        </a> 
+      {% else %}
+          {{ "Log In" | customer_login_link }}
+      {% endif %}
+    {% endif %}
+  </div>
+  
+  <div id="nav">
+    <nav ui-nav="">
+      <!-- Display linklist selected in theme settings. -->
+      {% unless linklists[settings.navbar_linklist] == empty %}
+      <ul class="nav">
+        {% for link in linklists[settings.navbar_linklist].links %}     
+          <!-- Check to see if this menu item has a child menu. -->
+          {% capture child_list_handle %}{{ link.title | handle }}{% endcapture %}
+          {% if linklists[child_list_handle] and linklists[child_list_handle].links.size > 0 %}{% assign has_dropdown = true %}{% else %}{% assign has_dropdown = false %}{% endif %}
+          <li class="{% if link.active %}active{% endif %} {% if has_dropdown %}dropdown{% endif %}"> 
+            <a md-ink-ripple="" class="waves-effect" href="{{ link.url }}" {% if has_dropdown %}class="dropdown-toggle" data-toggle="dropdown"{% endif %}> 
+              {% if has_dropdown %}<span class="pull-right text-muted"><b class="caret"></b></span>{% endif %}
+              <span class="font-normal">{{ link.title }}</span> 
+            </a>
+            {% if has_dropdown %}
+            <ul class="nav nav-sub">
+              {% for child_link in linklists[child_list_handle].links %}
+                <li><a md-ink-ripple="" href="{{ child_link.url }}" class=" waves-effect">{{ child_link.title }}</a></li>
+              {% endfor %}
+            </ul>
+            {% endif %}
+          </li>
+        {% endfor %}
+      </ul>
+     {% endunless %}
+    </nav>
+  </div>
+
+</div>
+
+
+
+

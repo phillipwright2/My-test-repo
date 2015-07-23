@@ -1,0 +1,24 @@
+{% assign saw_display = "Show" %}
+
+{% if saw_product_display.tags contains saw_show_tag %}
+  {% if customer.tags contains saw_show_tag %}
+  {% else %}
+    {% assign saw_display = "Hide" %}
+  {% endif %}
+{% endif %}
+
+{% assign tag_hide = saw_show_tag | append: '-Hide' %}
+{% if saw_product_display.tags contains tag_hide %}
+  {% if customer.tags contains saw_show_tag %}
+	  {% assign saw_display = 'Hide' %}
+  {% else %}
+  {% endif %}
+{% endif %}
+
+
+{% for collection in saw_product_display.collections %}
+  {% include "saw_collection_display" with collection %}
+  {% if saw_display_c == "Hide" %}
+	  {% assign saw_display = 'Hide' %}
+  {% endif %}
+{% endfor %}

@@ -1,0 +1,138 @@
+{% include 'variables' %}
+
+
+<div class="card">
+  <div class="card-heading padding">
+      <h1>Order Quote</h1>
+      <!-- Cart Summary -->
+      {% if cart.item_count == 0 %}
+        <em>Your cart is empty.</em>
+        {% if shop.collections_count %}<br /><a href="{{ shop.url }}/collections">Browse all collections</a>{% endif %}
+      {% else %}
+        <em>You have {{ cart.item_count }} {{ cart.item_count | pluralize: 'item', 'items' }} in your cart.</em>
+      {% endif %}
+  </div>
+
+  <div class="card-body">  
+      
+      <!-- Cart Table (only visible if items are in the cart) -->
+      {% unless cart.item_count == 0 %}
+        <form action="/cart" method="post" id="cartform" role="form">
+  <input type="hidden" name="discount" id="discount" value="" />
+ 
+          <!-- Cart Line Items and Totals -->
+          <table class="table table-striped table-condensed">
+            <thead>
+              <tr class="">
+              <td colspan="2">
+                  <p class="cart-attribute__field">
+                    <label for="purchase-order">Purchase Order #</label>
+                    <input required id="required purchase-order" type="text" class="input-lg" name="attributes[PONumber]" value="{{ cart.attributes["PONumber"] }}">               
+              </td>
+              <td colspan="2" align="right">
+                  <!-- Product Testers **MUST BE ABOVE 'cart-item' includes -->
+                   {% include 'product-tester' %}
+              </td>
+              </tr>           
+              <tr>
+                <th>Item</th>
+                <th class="text-right">Price</th>
+                <th class="text-center">Qty</th>
+                <th class="text-right">Total</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {% for item in cart.items %}
+                {% include 'cart-item' with item %}
+              {% endfor %}
+            </tbody>
+
+            <tfoot>
+              <tr>
+                <td colspan="4" align="right">
+      
+                    <span class="">Retail Value: {{ cart.total_price | money }}</span><br>
+                    <span class="saw-cart-total"> 
+                      
+                    </span>
+
+                    <div style="text-align: right;">
+                      <span class="saw-hidden saw-discount-info ">
+                      </span>
+                    </div>
+
+                </td>
+              </tr>
+              <tr>
+                <td colspan="4" align="right">
+                    <input required class="required form-control-static" id="rep" type="hidden" name="attributes[Rep]" value="{{vRepCode}}">
+                    <button type="submit" class="btn btn-default btn-lg" id="update-cart" name="update">Update Cart</button>   
+                    <button type="submit" class="btn pink btn-lg" name="checkout">Checkout</button>               
+                </td>
+              </tr>
+            </tfoot>
+          </table>
+
+          {% if additional_checkout_buttons %}
+          <div class="text-right">
+            <p>or</p>
+            {{ content_for_additional_checkout_buttons }}
+          </div>
+          {% endif %}
+
+        </form>
+      {% endunless %}
+  </div>
+ 
+
+
+<!-- Include this JS snippet here as it needs to be accessible to the cart table. -->
+<script type="text/javascript">
+  function remove_item(id) {
+    document.getElementById('updates_'+id).value = 0;
+    document.getElementById('cartform').submit();
+  }
+</script>
+<script>
+  jQuery(document).ready(function($) {
+    // Disable text input for tester items in cart
+    {% for line_item in cart.items  %}
+        var id = '{{line_item.id}}'
+        {% if line_item.title contains 'Free Gift' %}
+          console.log('tester-id', id);
+          console.log($('#updates_' + id));
+          $('#updates_' + id).attr("disabled", "disabled").css('border', 'none'); 
+        {% endif %}
+    {% endfor %}
+  });
+</script>
+
+
+<script>
+  function SAWOrderNote(note) {
+	note = note.replace(/something to change/i, "");
+ 	return note
+  }
+</script>
+     
+    {% include 'saw_cart' %}
+     
+<script>
+  if (typeof BuyXSubmit == "function") {
+    var buyx_checkout_selectors = ["input[name='checkout']", "button[name='checkout']", "input[name='goto_pp']", "button[name='goto_pp']", "input[name='goto_gc']", "button[name='goto_gc']", "[href$='checkout']"];
+    window.buyx_cart_global = {{ cart | json }}
+    buyx_checkout_selectors.forEach(function(selector) {
+        jQuery(selector).bind("click", function() {
+          console.log("click")
+            return BuyXSubmit(window.buyx_cart_global, "#updates_{variant_id}");
+        })
+    });
+  }
+/*use appropriate selector for your theme, e.g.
+      return BuyXSubmit({{cart | json}}, "input[data-id={variant_id}]");
+*/
+</script>
+ 
+  </div>
+ </div>

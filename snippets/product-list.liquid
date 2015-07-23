@@ -1,0 +1,113 @@
+{% comment %}
+
+  This snippet renders a product into a product list.
+  By default, it's only used by the product-list.liquid snippet.
+
+
+<a href="{{ product.url | within: collection }}" title="{{ product.title }}" class="thumbnail">
+  <img src="{{ product.images.first | product_img_url: 'large' }}" alt="{{ product.title }}" />
+</a>
+
+
+ 
+<h5>
+  <a href="{{ product.url | within: collection }}" title="{{ product.title }}">{{ product.title }}</a>
+  {% if product.compare_at_price_max > product.price and settings.product_show_sale_tag %}
+  <span class="label label-success">SALE</span>
+  {% endif %}
+</h5>
+
+<p class="lead text-muted">
+  
+  {% if saw_discount == 1 %}
+          <!-- original prices here -->
+
+        {% if product.compare_at_price_max > product.price %}
+        <del>{{ product.compare_at_price_max | money }}</del>
+        {% endif %}
+        {% if product.price_varies %} from {% endif %}
+        {{ product.price | money }}
+  {% else %}
+
+        
+          <del>{{ saw_product_compare_at_price | money }}</del>
+         
+          {% if product.price_varies %} from {% endif %}
+          {{ saw_product_price | money }}
+	 
+  {% endif %}
+  
+</p>
+
+{% endcomment %}
+
+
+{% include 'saw_compute_discount' with product %}
+<tr>
+  <td style="width:60px;">
+    <div class="circle_pic">
+       <a href="{{ product.url | within: collection }}" title="{{ product.title }}">
+        
+          <img class="img-circle" src="{{ product.images.first | product_img_url: 'thumb' }}" alt="{{ product.title }}">
+        </a>
+        </div>
+  </td>
+  <td>
+        <h5 class="media-heading">
+          {{ product.title }}
+          {% if product.compare_at_price_max > product.price and settings.product_show_sale_tag and saw_discount == 1  %}
+          <span class="label label-success">SALE</span>
+          {% endif %}
+           
+        <small class="text-muted">
+           
+  {% if saw_discount == 1 %}
+          <!-- original prices here -->
+
+        {% if product.compare_at_price_max > product.price %}
+        <del>{{ product.compare_at_price_max | money }}</del>
+        {% endif %}
+        {% if product.price_varies %} from {% endif %}
+        {{ product.price | money }}
+  {% else %}
+
+        
+          <del>{{ saw_product_compare_at_price | money }}</del>
+         
+          {% if product.price_varies %} from {% endif %}
+          {{ saw_product_price | money }}
+	 
+  {% endif %}
+        </small>
+  </td>
+  <td nowrap style="width:240px">
+      <div class="action">
+        {% assign variantCount = product.variants | size %}
+
+        {% for variant in product.variants %}
+          {% if variant.title contains "Default" %}
+
+            <form action="/cart/add" method="post" class="variants form-inline" id="product-actions-{{ variant.id }}" enctype="multipart/form-data" style="padding:0px;">
+              <div class="form-group">
+                {% if variant.available %}
+                  <input type="hidden" name="id" value="{{ variant.id }}" />
+                  <input class="form-control" type="number" value="3" min="3" name="quantity" style="width:65px">
+                  <button class="btn btn-default add-to-cart-btn" type="submit">Add to Cart</button>
+                {% else %}
+                  <!-- MODAL to email if item is sold out -->
+                  <a href="#-{{variant.id}}" class="btn btn-secondary BIS_trigger in-stock-modal" data-product-handle="{{ variant.handle }}">
+                    Email When Available
+                  </a>  
+                  <!-- end modal -->                          
+                {% endif %}
+              </div>
+            </form> 
+                 
+          {% else %}
+          {% endif %}
+        {% endfor %}
+    
+      </div>
+  </td>
+</tr>
+
